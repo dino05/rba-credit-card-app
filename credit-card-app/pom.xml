@@ -83,7 +83,7 @@
             <artifactId>jackson-databind-nullable</artifactId>
             <version>0.2.6</version>
         </dependency>
-“
+
         <!-- LOGGING -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
