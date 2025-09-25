@@ -38,7 +38,7 @@ docker ps
 
 ```bash
 mvn clean compile
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 The application will start on http://localhost:8080
