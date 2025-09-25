@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: credit-card-app
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/creditcarddb
+    username: postgres
+    password: rba123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: localhost:9093
+    consumer:
+      group-id: card-status-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      retry:
+        backoff:
+          initial-interval: 1000
+          max-interval: 10000
+          multiplier: 2
+
+external:
+  api:
+    enabled: false
+    url: https://rba.cardrequestapi.com/v1
+    card-request-endpoint: /api/v1/card-request
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+logging:
+  level:
+    com.rba.creditcardapp: INFO
+    org.flywaydb: INFO
+    org.hibernate.SQL: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+  file:
+    name: /app/logs/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+kafka:
+  topics:
+    card-status: card-status-topic
+    card-production: card-production-topic
