@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientRequest {
-
+public class NewCardRequestDto {
     @NotBlank(message = "First name is mandatory")
     private String firstName;
 
@@ -23,5 +22,14 @@ public class ClientRequest {
     @Size(min = 11, max = 11, message = "OIB must be exactly 11 characters")
     private String oib;
 
-    private String cardStatus = "PENDING";
+    private String status;
+
+    public static NewCardRequestDto fromClient(ClientResponseDto client) {
+        return NewCardRequestDto.builder()
+                .firstName(client.getFirstName())
+                .lastName(client.getLastName())
+                .oib(client.getOib())
+                .status(client.getCardStatus())
+                .build();
+    }
 }

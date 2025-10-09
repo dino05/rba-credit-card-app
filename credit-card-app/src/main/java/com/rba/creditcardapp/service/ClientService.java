@@ -1,8 +1,8 @@
 package com.rba.creditcardapp.service;
 
-import com.rba.creditcardapp.dto.ClientRequest;
-import com.rba.creditcardapp.dto.ClientResponse;
-import com.rba.creditcardapp.model.NewCardRequest;
+import com.rba.creditcardapp.dto.ClientRequestDto;
+import com.rba.creditcardapp.dto.ClientResponseDto;
+import com.rba.creditcardapp.dto.NewCardRequestDto;
 import com.rba.creditcardapp.utils.ClientMapper;
 import com.rba.creditcardapp.model.Client;
 import com.rba.creditcardapp.repository.ClientRepository;
@@ -31,46 +31,57 @@ public class ClientService {
         this.externalApiClientService = externalApiClientService;
     }
 
-    public ClientResponse registerClient(ClientRequest clientRequest) {
-        log.info("Registering new client with OIB: {}", clientRequest.getOib());
+    public ClientResponseDto registerClient(ClientRequestDto clientRequestDto) {
+        log.info("Registering new client with OIB: {}", clientRequestDto.getOib());
 
-        if (clientRepository.existsByOib(clientRequest.getOib())) {
-            throw new IllegalArgumentException("Client with OIB " + clientRequest.getOib() + " already exists");
+        if (clientRepository.existsByOib(clientRequestDto.getOib())) {
+            throw new IllegalArgumentException("Client with OIB " + clientRequestDto.getOib() + " already exists");
         }
 
-        Client client = clientMapper.toEntity(clientRequest);
+        Client client = clientMapper.toEntity(clientRequestDto);
         Client savedClient = clientRepository.save(client);
 
         log.info("Successfully registered client with ID: {}", savedClient.getId());
         return clientMapper.toResponse(savedClient);
     }
 
-    public Client registerClientFromCardRequest(NewCardRequest cardRequest) {
-        log.info("Processing card request for: {} {}",
-                cardRequest.getFirstName(), cardRequest.getLastName());
-
-        validateCardRequest(cardRequest);
-
-        if (clientRepository.existsByOib(cardRequest.getOib())) {
-            throw new IllegalArgumentException("Client with OIB " + cardRequest.getOib() + " already exists");
-        }
-
-        Client client = createClientFromRequest(cardRequest);
-        Client savedClient = clientRepository.save(client);
-
-        externalApiClientService.forwardCardRequestToExternalApi(cardRequest);
-
-        log.info("Successfully processed card request for OIB: {}", cardRequest.getOib());
-        return savedClient;
-    }
-
-    public Optional<ClientResponse> findByOib(String oib) {
+    public Optional<ClientResponseDto> findByOib(String oib) {
         log.debug("Searching for client with OIB: {}", oib);
-        return clientRepository.findByOib(oib)
-                .map(clientMapper::toResponse);
+
+        Optional<Client> client = clientRepository.findByOib(oib);
+
+        if (client.isPresent()) {
+            ClientResponseDto clientResponseDto = clientMapper.toResponse(client.get());
+
+            forwardClientToExternalApiAsync(clientResponseDto);
+
+            return Optional.of(clientResponseDto);
+        } else {
+            return Optional.empty();
+        }
     }
 
-    public Page<ClientResponse> findAll(Pageable pageable) {
+    private void forwardClientToExternalApiAsync(ClientResponseDto client) {
+        try {
+            NewCardRequestDto cardRequest = NewCardRequestDto.fromClient(client);
+
+            new Thread(() -> {
+                try {
+                    externalApiClientService.forwardClientToExternalApi(cardRequest);
+                    log.info("Successfully auto-forwarded client OIB: {} to external API", client.getOib());
+                } catch (Exception e) {
+                    log.warn("Failed to auto-forward client OIB: {} to external API: {}",
+                            client.getOib(), e.getMessage());
+                }
+            }).start();
+
+        } catch (Exception e) {
+            log.warn("Error preparing to auto-forward client OIB: {} to external API: {}",
+                    client.getOib(), e.getMessage());
+        }
+    }
+
+    public Page<ClientResponseDto> findAll(Pageable pageable) {
         log.debug("Retrieving clients page: {}, size: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
 
@@ -78,7 +89,7 @@ public class ClientService {
                 .map(clientMapper::toResponse);
     }
 
-    public ClientResponse updateClientStatus(String oib, String status) {
+    public ClientResponseDto updateClientStatus(String oib, String status) {
         log.info("Updating status for client with OIB: {} to {}", oib, status);
 
         validateOib(oib);
@@ -115,26 +126,5 @@ public class ClientService {
         if (status == null || status.trim().isEmpty()) {
             throw new IllegalArgumentException("Status cannot be null or empty");
         }
-    }
-
-    private void validateCardRequest(NewCardRequest cardRequest) {
-        if (cardRequest.getOib() == null || cardRequest.getOib().length() != 11) {
-            throw new IllegalArgumentException("OIB must be exactly 11 characters");
-        }
-        if (cardRequest.getFirstName() == null || cardRequest.getFirstName().trim().isEmpty()) {
-            throw new IllegalArgumentException("First name is required");
-        }
-        if (cardRequest.getLastName() == null || cardRequest.getLastName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Last name is required");
-        }
-    }
-
-    private Client createClientFromRequest(NewCardRequest cardRequest) {
-        Client client = new Client();
-        client.setFirstName(cardRequest.getFirstName());
-        client.setLastName(cardRequest.getLastName());
-        client.setOib(cardRequest.getOib());
-        client.setCardStatus(cardRequest.getStatus() != null ? cardRequest.getStatus() : "PENDING");
-        return client;
     }
 }

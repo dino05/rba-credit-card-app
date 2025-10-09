@@ -1,9 +1,6 @@
 package com.rba.creditcardapp.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.rba.creditcardapp.model.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +9,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestControllerAdvice
 @Slf4j
@@ -24,14 +21,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("Business validation error: {}", ex.getMessage());
 
-        ErrorResponse error = ErrorResponse.builder()
-                .errorCode("VALIDATION_ERROR")
-                .message(ex.getMessage())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .timestamp(LocalDateTime.now())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode("VALIDATION_ERROR");
+        errorResponse.setId(generateErrorId());
+        errorResponse.setDescription(ex.getMessage());
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -43,40 +38,27 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        ErrorResponse error = ErrorResponse.builder()
-                .errorCode("VALIDATION_ERROR")
-                .message("Request validation failed")
-                .status(HttpStatus.BAD_REQUEST.value())
-                .timestamp(LocalDateTime.now())
-                .details(errors)
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode("VALIDATION_ERROR");
+        errorResponse.setId(generateErrorId());
+        errorResponse.setDescription("Request validation failed: " + errors);
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
 
-        ErrorResponse error = ErrorResponse.builder()
-                .errorCode("INTERNAL_ERROR")
-                .message("An unexpected error occurred")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .timestamp(LocalDateTime.now())
-                .build();
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode("INTERNAL_ERROR");
+        errorResponse.setId(generateErrorId());
+        errorResponse.setDescription("An unexpected error occurred");
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ErrorResponse {
-        private String errorCode;
-        private String message;
-        private int status;
-        private LocalDateTime timestamp;
-        private Map<String, String> details;
+    private String generateErrorId() {
+        return UUID.randomUUID().toString();
     }
 }

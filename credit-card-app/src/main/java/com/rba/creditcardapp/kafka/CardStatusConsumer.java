@@ -1,13 +1,15 @@
 package com.rba.creditcardapp.kafka;
 
-import com.rba.creditcardapp.dto.CardStatusUpdate;
+import com.rba.creditcardapp.dto.CardStatusUpdateDto;
 import com.rba.creditcardapp.service.ClientService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class CardStatusConsumer {
 
     private final ClientService clientService;
@@ -21,7 +23,7 @@ public class CardStatusConsumer {
             groupId = "${spring.kafka.consumer.group-id:card-status-group}",
             containerFactory = "kafkaListenerContainerFactory"
     )
-    public void receiveCardStatusUpdate(CardStatusUpdate statusUpdate) {
+    public void receiveCardStatusUpdate(CardStatusUpdateDto statusUpdate) {
 
         if (statusUpdate == null) {
             log.warn("Received null payload from Kafka");
@@ -48,7 +50,7 @@ public class CardStatusConsumer {
         }
     }
 
-    private boolean isValidStatusUpdate(CardStatusUpdate statusUpdate) {
+    private boolean isValidStatusUpdate(CardStatusUpdateDto statusUpdate) {
         if (statusUpdate == null) {
             log.warn("Received null status update");
             return false;

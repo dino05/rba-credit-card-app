@@ -5,8 +5,10 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -16,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@EnableKafka
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9093}")
@@ -34,7 +38,7 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.rba.creditcardapp.dto");
-        props.put(JsonDeserializer.TYPE_MAPPINGS, "cardStatusUpdate:com.rba.creditcardapp.dto.CardStatusUpdate");
+        props.put(JsonDeserializer.TYPE_MAPPINGS, "cardStatusUpdate:com.rba.creditcardapp.dto.CardStatusUpdateDto");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -45,7 +49,7 @@ public class KafkaConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
-        factory.setConcurrency(3); // 3 listener threads
+        factory.setConcurrency(3);
 
         return factory;
     }
@@ -56,8 +60,8 @@ public class KafkaConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put(ProducerConfig.ACKS_CONFIG, "all"); // Wait for all replicas
-        props.put(ProducerConfig.RETRIES_CONFIG, 3); // Retry 3 times
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        props.put(ProducerConfig.RETRIES_CONFIG, 3);
 
         return new DefaultKafkaProducerFactory<>(props);
     }

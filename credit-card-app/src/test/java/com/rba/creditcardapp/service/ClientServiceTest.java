@@ -1,7 +1,7 @@
 package com.rba.creditcardapp.service;
 
-import com.rba.creditcardapp.dto.ClientRequest;
-import com.rba.creditcardapp.dto.ClientResponse;
+import com.rba.creditcardapp.dto.ClientRequestDto;
+import com.rba.creditcardapp.dto.ClientResponseDto;
 import com.rba.creditcardapp.utils.ClientMapper;
 import com.rba.creditcardapp.model.NewCardRequest;
 import com.rba.creditcardapp.model.Client;
@@ -47,55 +47,19 @@ class ClientServiceTest {
     }
 
     @Test
-    void registerClientFromCardRequest_Success() {
-        NewCardRequest cardRequest = createTestCardRequest();
-        Client client = createTestClient();
-        Client savedClient = createTestClient();
-        savedClient.setId(1L);
-
-        when(clientRepository.existsByOib("12345678901")).thenReturn(false);
-        when(clientMapper.toEntity(any(ClientRequest.class))).thenReturn(client);
-        when(clientRepository.save(any(Client.class))).thenReturn(savedClient);
-
-        Client result = clientService.registerClientFromCardRequest(cardRequest);
-
-        assertNotNull(result);
-        assertEquals("John", result.getFirstName());
-        assertEquals("12345678901", result.getOib());
-
-        verify(clientRepository).existsByOib("12345678901");
-        verify(clientRepository).save(any(Client.class));
-        verify(externalApiClientService).forwardCardRequestToExternalApi(cardRequest);
-    }
-
-    @Test
-    void registerClientFromCardRequest_ClientAlreadyExists() {
-        NewCardRequest cardRequest = createTestCardRequest();
-
-        when(clientRepository.existsByOib("12345678901")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> clientService.registerClientFromCardRequest(cardRequest));
-
-        verify(clientRepository).existsByOib("12345678901");
-        verify(clientRepository, never()).save(any(Client.class));
-        verify(externalApiClientService, never()).forwardCardRequestToExternalApi(any());
-    }
-
-    @Test
     void registerClient_Success() {
-        ClientRequest clientRequest = createTestClientRequest();
+        ClientRequestDto clientRequest = createTestClientRequest();
         Client clientEntity = createTestClient();
         Client savedClient = createTestClient();
         savedClient.setId(1L);
-        ClientResponse expectedResponse = createTestClientResponse();
+        ClientResponseDto expectedResponse = createTestClientResponse();
 
         when(clientRepository.existsByOib("12345678901")).thenReturn(false);
         when(clientMapper.toEntity(clientRequest)).thenReturn(clientEntity);
         when(clientRepository.save(clientEntity)).thenReturn(savedClient);
         when(clientMapper.toResponse(savedClient)).thenReturn(expectedResponse);
 
-        ClientResponse result = clientService.registerClient(clientRequest);
+        ClientResponseDto result = clientService.registerClient(clientRequest);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -110,7 +74,7 @@ class ClientServiceTest {
 
     @Test
     void registerClient_ClientAlreadyExists() {
-        ClientRequest clientRequest = createTestClientRequest();
+        ClientRequestDto clientRequest = createTestClientRequest();
 
         when(clientRepository.existsByOib("12345678901")).thenReturn(true);
 
@@ -127,12 +91,12 @@ class ClientServiceTest {
         String oib = "12345678901";
         Client client = createTestClient();
         client.setId(1L);
-        ClientResponse expectedResponse = createTestClientResponse();
+        ClientResponseDto expectedResponse = createTestClientResponse();
 
         when(clientRepository.findByOib(oib)).thenReturn(Optional.of(client));
         when(clientMapper.toResponse(client)).thenReturn(expectedResponse);
 
-        Optional<ClientResponse> result = clientService.findByOib(oib);
+        Optional<ClientResponseDto> result = clientService.findByOib(oib);
 
         assertTrue(result.isPresent());
         assertEquals("John", result.get().getFirstName());
@@ -148,7 +112,7 @@ class ClientServiceTest {
 
         when(clientRepository.findByOib(oib)).thenReturn(Optional.empty());
 
-        Optional<ClientResponse> result = clientService.findByOib(oib);
+        Optional<ClientResponseDto> result = clientService.findByOib(oib);
 
         assertTrue(result.isEmpty());
 
@@ -188,13 +152,13 @@ class ClientServiceTest {
         Client client = createTestClient();
         List<Client> clients = List.of(client);
         Page<Client> clientPage = new PageImpl<>(clients, pageable, 1);
-        ClientResponse clientResponse = createTestClientResponse();
-        Page<ClientResponse> expectedPage = new PageImpl<>(List.of(clientResponse), pageable, 1);
+        ClientResponseDto clientResponse = createTestClientResponse();
+        Page<ClientResponseDto> expectedPage = new PageImpl<>(List.of(clientResponse), pageable, 1);
 
         when(clientRepository.findAll(pageable)).thenReturn(clientPage);
         when(clientMapper.toResponse(client)).thenReturn(clientResponse);
 
-        Page<ClientResponse> result = clientService.findAll(pageable);
+        Page<ClientResponseDto> result = clientService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
@@ -213,14 +177,14 @@ class ClientServiceTest {
         existingClient.setId(1L);
         Client updatedClient = createTestClient();
         updatedClient.setCardStatus(newStatus);
-        ClientResponse expectedResponse = createTestClientResponse();
+        ClientResponseDto expectedResponse = createTestClientResponse();
         expectedResponse.setCardStatus(newStatus);
 
         when(clientRepository.findByOib(oib)).thenReturn(Optional.of(existingClient));
         when(clientRepository.save(existingClient)).thenReturn(updatedClient);
         when(clientMapper.toResponse(updatedClient)).thenReturn(expectedResponse);
 
-        ClientResponse result = clientService.updateClientStatus(oib, newStatus);
+        ClientResponseDto result = clientService.updateClientStatus(oib, newStatus);
 
         assertNotNull(result);
         assertEquals(newStatus, result.getCardStatus());
@@ -270,18 +234,8 @@ class ClientServiceTest {
         verify(clientRepository, never()).save(any());
     }
 
-    // Helper methods
-    private NewCardRequest createTestCardRequest() {
-        NewCardRequest cardRequest = new NewCardRequest();
-        cardRequest.setFirstName("John");
-        cardRequest.setLastName("Doe");
-        cardRequest.setOib("12345678901");
-        cardRequest.setStatus("PENDING");
-        return cardRequest;
-    }
-
-    private ClientRequest createTestClientRequest() {
-        ClientRequest request = new ClientRequest();
+    private ClientRequestDto createTestClientRequest() {
+        ClientRequestDto request = new ClientRequestDto();
         request.setFirstName("John");
         request.setLastName("Doe");
         request.setOib("12345678901");
@@ -301,8 +255,8 @@ class ClientServiceTest {
         return client;
     }
 
-    private ClientResponse createTestClientResponse() {
-        ClientResponse response = new ClientResponse();
+    private ClientResponseDto createTestClientResponse() {
+        ClientResponseDto response = new ClientResponseDto();
         response.setId(1L);
         response.setFirstName("John");
         response.setLastName("Doe");

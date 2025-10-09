@@ -1,16 +1,21 @@
 package com.rba.creditcardapp.kafka;
 
-import com.rba.creditcardapp.dto.CardStatusUpdate;
+import com.rba.creditcardapp.dto.CardStatusUpdateDto;
 import com.rba.creditcardapp.service.ClientService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.TestPropertySource;
 
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.consumer.auto-startup=false"
+})
 class CardStatusConsumerTest {
 
     @Mock
@@ -21,7 +26,7 @@ class CardStatusConsumerTest {
 
     @Test
     void receiveCardStatusUpdate_Success() {
-        CardStatusUpdate statusUpdate = createValidStatusUpdate();
+        CardStatusUpdateDto statusUpdate = createValidStatusUpdate();
 
         cardStatusConsumer.receiveCardStatusUpdate(statusUpdate);
 
@@ -30,7 +35,7 @@ class CardStatusConsumerTest {
 
     @Test
     void receiveCardStatusUpdate_InvalidOib() {
-        CardStatusUpdate statusUpdate = new CardStatusUpdate("123", "APPROVED", "Test reason");
+        CardStatusUpdateDto statusUpdate = new CardStatusUpdateDto("123", "APPROVED", "Test reason");
 
         cardStatusConsumer.receiveCardStatusUpdate(statusUpdate);
 
@@ -39,7 +44,7 @@ class CardStatusConsumerTest {
 
     @Test
     void receiveCardStatusUpdate_NullStatus() {
-        CardStatusUpdate statusUpdate = new CardStatusUpdate();
+        CardStatusUpdateDto statusUpdate = new CardStatusUpdateDto();
         statusUpdate.setOib("12345678901");
         statusUpdate.setStatus(null);
         statusUpdate.setUpdateReason("Test reason");
@@ -51,7 +56,7 @@ class CardStatusConsumerTest {
 
     @Test
     void receiveCardStatusUpdate_InvalidStatusValue() {
-        CardStatusUpdate statusUpdate = new CardStatusUpdate("12345678901", "INVALID_STATUS", "Test reason");
+        CardStatusUpdateDto statusUpdate = new CardStatusUpdateDto("12345678901", "INVALID_STATUS", "Test reason");
 
         cardStatusConsumer.receiveCardStatusUpdate(statusUpdate);
 
@@ -66,19 +71,18 @@ class CardStatusConsumerTest {
 
     @Test
     void receiveCardStatusUpdate_ServiceThrowsException() {
-        CardStatusUpdate statusUpdate = createValidStatusUpdate();
+        CardStatusUpdateDto statusUpdate = createValidStatusUpdate();
 
         doThrow(new RuntimeException("Service error"))
                 .when(clientService)
                 .updateClientStatus("12345678901", "APPROVED");
 
-        // Should not throw exception to the caller (should be caught and logged)
         cardStatusConsumer.receiveCardStatusUpdate(statusUpdate);
 
         verify(clientService).updateClientStatus("12345678901", "APPROVED");
     }
 
-    private CardStatusUpdate createValidStatusUpdate() {
-        return new CardStatusUpdate("12345678901", "APPROVED", "Card production completed");
+    private CardStatusUpdateDto createValidStatusUpdate() {
+        return new CardStatusUpdateDto("12345678901", "APPROVED", "Card production completed");
     }
 }

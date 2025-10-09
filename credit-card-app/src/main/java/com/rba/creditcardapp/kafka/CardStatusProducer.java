@@ -1,7 +1,8 @@
 package com.rba.creditcardapp.kafka;
 
-import com.rba.creditcardapp.dto.CardStatusUpdate;
+import com.rba.creditcardapp.dto.CardStatusUpdateDto;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class CardStatusProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -18,9 +20,9 @@ public class CardStatusProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendCardStatusUpdate(String topic, CardStatusUpdate statusUpdate) {
+    public void sendCardStatusUpdate(String topic, CardStatusUpdateDto statusUpdate) {
         try {
-            Message<CardStatusUpdate> message = MessageBuilder
+            Message<CardStatusUpdateDto> message = MessageBuilder
                     .withPayload(statusUpdate)
                     .setHeader(KafkaHeaders.TOPIC, topic)
                     .setHeader(KafkaHeaders.KEY, statusUpdate.getOib())
@@ -37,7 +39,7 @@ public class CardStatusProducer {
         }
     }
 
-    public void sendCardStatusUpdate(CardStatusUpdate statusUpdate) {
+    public void sendCardStatusUpdate(CardStatusUpdateDto statusUpdate) {
         sendCardStatusUpdate("card-status-topic", statusUpdate);
     }
 }

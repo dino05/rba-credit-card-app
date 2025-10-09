@@ -20,9 +20,7 @@ const SearchClient = ({ onClientFound }) => {
     setSearchResult(null);
 
     try {
-      console.log('Searching for OIB:', searchOib);
       const response = await clientAPI.getClientByOib(searchOib);
-      console.log('Search response:', response);
       
       setSearchResult(response.data);
       setMessage('Client found!');

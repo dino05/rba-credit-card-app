@@ -27,6 +27,7 @@ spring:
     consumer:
       group-id: card-status-group
       auto-offset-reset: earliest
+      auto-startup: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -40,8 +41,6 @@ spring:
 external:
   api:
     enabled: false
-    url: https://rba.cardrequestapi.com/v1
-    card-request-endpoint: /api/v1/card-request
 
 server:
   port: 8080

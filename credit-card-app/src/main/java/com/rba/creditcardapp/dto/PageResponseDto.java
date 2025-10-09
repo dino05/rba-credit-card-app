@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-public class PageResponse<T> {
+public class PageResponseDto<T> {
     private List<T> content;
     private int currentPage;
     private int totalPages;
@@ -17,7 +17,7 @@ public class PageResponse<T> {
     private boolean first;
     private boolean last;
 
-    public PageResponse(Page<T> page) {
+    public PageResponseDto(Page<T> page) {
         this.content = page.getContent();
         this.currentPage = page.getNumber();
         this.totalPages = page.getTotalPages();
