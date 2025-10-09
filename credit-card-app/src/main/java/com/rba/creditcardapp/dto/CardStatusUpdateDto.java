@@ -26,14 +26,4 @@ public class CardStatusUpdateDto {
         this.updateReason = updateReason;
         this.timestamp = LocalDateTime.now();
     }
-
-    @Override
-    public String toString() {
-        return "CardStatusUpdate{" +
-                "oib='" + oib + '\'' +
-                ", status='" + status + '\'' +
-                ", updateReason='" + updateReason + '\'' +
-                ", timestamp=" + timestamp +
-                '}';
-    }
 }

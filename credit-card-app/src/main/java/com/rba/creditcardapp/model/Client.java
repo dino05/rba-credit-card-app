@@ -50,16 +50,4 @@ public class Client {
     @UpdateTimestamp
     @Column(name = "updtm")
     private LocalDateTime updatedAt;
-
-    @Override
-    public String toString() {
-        return "Client{" +
-                "id=" + id +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", oib='" + oib + '\'' +
-                ", cardStatus='" + cardStatus + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
-    }
 }
