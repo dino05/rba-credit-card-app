@@ -1,11 +1,14 @@
 package com.rba.creditcardapp.kafka;
 
 import com.rba.creditcardapp.dto.CardStatusUpdateDto;
+import com.rba.creditcardapp.model.CardStatus;
 import com.rba.creditcardapp.service.ClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 @Component
 @Slf4j
@@ -66,18 +69,9 @@ public class CardStatusConsumer {
             return false;
         }
 
-        String[] validStatuses = {"PENDING", "APPROVED", "REJECTED", "IN_PROGRESS", "COMPLETED", "SHIPPED"};
-        boolean isValidStatus = false;
-        for (String validStatus : validStatuses) {
-            if (validStatus.equalsIgnoreCase(statusUpdate.getStatus())) {
-                isValidStatus = true;
-                break;
-            }
-        }
-
-        if (!isValidStatus) {
-            log.warn("Invalid status value received: {} for OIB: {}",
-                    statusUpdate.getStatus(), statusUpdate.getOib());
+        if (!CardStatus.isValid(statusUpdate.getStatus())) {
+            log.warn("Invalid status value received: {} for OIB: {}. Valid statuses: {}",
+                    statusUpdate.getStatus(), statusUpdate.getOib(), Arrays.toString(CardStatus.values()));
             return false;
         }
 

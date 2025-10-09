@@ -1,5 +1,6 @@
 package com.rba.creditcardapp.dto;
 
+import com.rba.creditcardapp.model.CardStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -23,5 +24,5 @@ public class ClientRequestDto {
     @Size(min = 11, max = 11, message = "OIB must be exactly 11 characters")
     private String oib;
 
-    private String cardStatus = "PENDING";
+    private String cardStatus = CardStatus.PENDING.name();
 }
